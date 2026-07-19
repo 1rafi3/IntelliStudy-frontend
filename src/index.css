@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans antialiased selection:bg-primary-100 selection:text-primary-900;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight text-neutral-800 font-bold;
+  }
+}
+
+@layer components {
+  /* Reusable cards with exact max 16px border-radius and professional shadow-sm */
+  .card-premium {
+    @apply bg-white border border-neutral-200/60 rounded-2xl p-md shadow-sm transition-all duration-300 hover:shadow-md hover:border-neutral-300/80;
+  }
+
+  .glass-premium {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 rounded-2xl p-md shadow-sm;
+  }
+
+  /* Micro-animation transitions */
+  .transition-micro {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Clean interactive buttons */
+  .btn-primary {
+    @apply px-md py-sm bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-medium rounded-xl shadow-sm hover:shadow active:shadow-inner transition-micro inline-flex items-center justify-center gap-xs focus:outline-none focus:ring-2 focus:ring-primary-500/40;
+  }
+
+  .btn-secondary {
+    @apply px-md py-sm bg-white hover:bg-neutral-50 active:bg-neutral-100 text-neutral-700 border border-neutral-200 rounded-xl transition-micro inline-flex items-center justify-center gap-xs focus:outline-none focus:ring-2 focus:ring-neutral-500/20;
+  }
+
+  .btn-accent {
+    @apply px-md py-sm bg-accent-500 hover:bg-accent-600 active:bg-accent-700 text-white font-medium rounded-xl shadow-sm hover:shadow active:shadow-inner transition-micro inline-flex items-center justify-center gap-xs focus:outline-none focus:ring-2 focus:ring-accent-500/40;
+  }
+}

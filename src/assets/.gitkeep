@@ -1,0 +1,7 @@
+# ─── Assets Directory ─────────────────────────────────────────────────────────
+# Place static assets here: images, SVGs, fonts, icons.
+# Import them in components like:
+#   import logo from '@/assets/logo.svg';
+#
+# Cloudinary should be used for user-uploaded images.
+# This folder is for static app assets only.
