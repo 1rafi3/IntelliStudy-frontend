@@ -74,9 +74,15 @@ export const LoginPage: React.FC = () => {
     document.body.appendChild(script);
   }, []);
 
+  // Track whether Google button has been initialized
+  const googleInitialized = useRef(false);
+
   // Initialize and render Google Sign-In button
   useEffect(() => {
     if (!googleScriptLoaded || !googleBtnRef.current || !window.google?.accounts) return;
+    if (googleInitialized.current) return;
+    googleInitialized.current = true;
+
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: (response) => {
