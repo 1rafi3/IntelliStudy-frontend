@@ -16,6 +16,11 @@ export interface AuthResponse {
     email: string;
     role: 'user' | 'admin';
     avatar: string;
+    learningGoal?: string;
+    currentLevel?: string;
+    learningStyle?: string;
+    preferredLanguage?: string;
+    weeklyStudyHours?: number;
   };
   accessToken: string;
 }
