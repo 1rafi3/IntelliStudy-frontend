@@ -12,6 +12,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { BookmarksPage } from '@/pages/BookmarksPage';
 import { RoadmapDetailPage } from '@/pages/RoadmapDetailPage';
 import { AiGeneratorPage } from '@/pages/AiGeneratorPage';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
 
 import { ProtectedRoute } from '@components/layout/ProtectedRoute';
 
@@ -65,6 +66,10 @@ const router = createBrowserRouter([
       {
         path: 'bookmarks',
         element: <BookmarksPage />,
+      },
+      {
+        path: 'analytics',
+        element: <AnalyticsPage />,
       },
     ],
   },

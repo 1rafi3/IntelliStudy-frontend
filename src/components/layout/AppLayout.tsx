@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, MessageCircle, LayoutDashboard, Sparkles, User, Bookmark, LogOut, Bot } from 'lucide-react';
+import { BookOpen, MessageCircle, LayoutDashboard, Sparkles, User, Bookmark, BarChart3, LogOut, Bot } from 'lucide-react';
 import { useAuth } from '@features/auth/hooks';
 
 // ─── Navigation Items ─────────────────────────────────────────────────────────
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/dashboard/ai-generator',   label: 'AI Generator',     icon: Bot },
   { path: '/dashboard/chat',           label: 'AI Coach',         icon: MessageCircle },
   { path: '/dashboard/recommendations',label: 'Recommendations',  icon: Sparkles },
+  { path: '/dashboard/analytics',      label: 'Analytics',        icon: BarChart3 },
   { path: '/dashboard/profile',        label: 'Profile',          icon: User },
   { path: '/dashboard/bookmarks',      label: 'Bookmarks',        icon: Bookmark },
 ];
