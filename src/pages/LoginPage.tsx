@@ -47,6 +47,8 @@ const loginSchema = z.object({
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const DEMO_EMAIL = import.meta.env.VITE_DEMO_EMAIL || 'demo@intellistudy.ai';
+const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD || 'Demo1234';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -112,6 +114,7 @@ export const LoginPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
@@ -132,6 +135,12 @@ export const LoginPage: React.FC = () => {
         toast.error(msg);
       },
     });
+  };
+
+  const handleDemoLogin = () => {
+    setValue('email', DEMO_EMAIL);
+    setValue('password', DEMO_PASSWORD);
+    handleSubmit(onSubmit)();
   };
 
   // Shared indicator for any auth operation in progress
@@ -221,6 +230,18 @@ export const LoginPage: React.FC = () => {
                 ) : (
                   'Sign In'
                 )}
+              </button>
+            </div>
+
+            {/* Demo Login */}
+            <div>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleDemoLogin}
+                className="w-full py-sm px-md border border-dashed border-accent-300 text-accent-600 hover:bg-accent-50 rounded-xl text-sm font-semibold transition-micro"
+              >
+                Demo Login
               </button>
             </div>
           </form>

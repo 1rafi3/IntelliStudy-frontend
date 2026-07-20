@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_TAGLINE: string;
   readonly VITE_GOOGLE_CLIENT_ID: string;
   readonly VITE_APP_ENV: string;
+  readonly VITE_DEMO_EMAIL: string;
+  readonly VITE_DEMO_PASSWORD: string;
 }
 
 interface ImportMeta {

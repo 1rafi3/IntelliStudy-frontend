@@ -6,6 +6,8 @@ const envSchema = z.object({
   VITE_APP_TAGLINE: z.string().default('Your AI Learning Coach'),
   VITE_GOOGLE_CLIENT_ID: z.string().min(1, 'VITE_GOOGLE_CLIENT_ID is required'),
   VITE_APP_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  VITE_DEMO_EMAIL: z.string().default('demo@intellistudy.ai'),
+  VITE_DEMO_PASSWORD: z.string().default('Demo1234'),
 });
 
 const _parsed = envSchema.safeParse({
@@ -14,6 +16,8 @@ const _parsed = envSchema.safeParse({
   VITE_APP_TAGLINE: import.meta.env.VITE_APP_TAGLINE,
   VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
   VITE_APP_ENV: import.meta.env.VITE_APP_ENV,
+  VITE_DEMO_EMAIL: import.meta.env.VITE_DEMO_EMAIL,
+  VITE_DEMO_PASSWORD: import.meta.env.VITE_DEMO_PASSWORD,
 });
 
 if (!_parsed.success) {
