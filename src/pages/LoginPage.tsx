@@ -1,11 +1,38 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useLoginMutation } from '@features/auth/hooks';
+import { useLoginMutation, useGoogleLoginMutation } from '@features/auth/hooks';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential: string }) => void;
+          }) => void;
+          renderButton: (
+            element: HTMLElement,
+            options: {
+              type?: string;
+              shape?: string;
+              theme?: string;
+              text?: string;
+              size?: string;
+              width?: number;
+              logo_alignment?: string;
+            },
+          ) => void;
+        };
+      };
+    };
+  }
+}
 
 const loginSchema = z.object({
   email: z
@@ -19,13 +46,62 @@ const loginSchema = z.object({
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const loginMutation = useLoginMutation();
+  const googleLoginMutation = useGoogleLoginMutation();
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
 
   // Retrieve destination route if redirected by ProtectedRoute
   const from = (location.state as any)?.from?.pathname || '/dashboard';
+
+  // Load Google Identity Services script
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    if (window.google?.accounts) {
+      setGoogleScriptLoaded(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleScriptLoaded(true);
+    document.body.appendChild(script);
+  }, []);
+
+  // Initialize and render Google Sign-In button
+  useEffect(() => {
+    if (!googleScriptLoaded || !googleBtnRef.current || !window.google?.accounts) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (response) => {
+        googleLoginMutation.mutate(response.credential, {
+          onSuccess: () => {
+            toast.success('Signed in with Google!');
+            navigate(from, { replace: true });
+          },
+          onError: (err: any) => {
+            const msg = err.response?.data?.message || 'Google sign-in failed';
+            toast.error(msg);
+          },
+        });
+      },
+    });
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      type: 'standard',
+      shape: 'rectangular',
+      theme: 'outline',
+      text: 'continue_with',
+      size: 'large',
+      width: googleBtnRef.current.offsetWidth || 400,
+      logo_alignment: 'left',
+    });
+  }, [googleScriptLoaded, googleLoginMutation, navigate, from]);
 
   const {
     register,
@@ -51,6 +127,9 @@ export const LoginPage: React.FC = () => {
       },
     });
   };
+
+  // Shared indicator for any auth operation in progress
+  const isPending = loginMutation.isPending || googleLoginMutation.isPending;
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col justify-center py-xl px-md sm:px-lg">
@@ -128,7 +207,7 @@ export const LoginPage: React.FC = () => {
             <div>
               <button
                 type="submit"
-                disabled={loginMutation.isPending}
+                disabled={isPending}
                 className="w-full btn-primary font-semibold py-sm"
               >
                 {loginMutation.isPending ? (
@@ -139,6 +218,32 @@ export const LoginPage: React.FC = () => {
               </button>
             </div>
           </form>
+
+          {/* Divider */}
+          {GOOGLE_CLIENT_ID && (
+            <div className="relative my-md">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-neutral-200" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-white px-sm text-neutral-400 font-semibold">or continue with</span>
+              </div>
+            </div>
+          )}
+
+          {/* Google Sign-In Button */}
+          {GOOGLE_CLIENT_ID && (
+            <div className="flex justify-center">
+              {googleLoginMutation.isPending ? (
+                <div className="flex items-center justify-center gap-2 w-full py-sm border border-neutral-200 rounded-xl text-sm text-neutral-500">
+                  <div className="w-5 h-5 border-2 border-neutral-300 border-t-neutral-600 rounded-full animate-spin" />
+                  Connecting to Google...
+                </div>
+              ) : (
+                <div ref={googleBtnRef} className="w-full min-h-[40px]" />
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

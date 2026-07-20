@@ -46,6 +46,24 @@ export const useRegisterMutation = () => {
   });
 };
 
+export const useGoogleLoginMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (idToken: string) => authService.loginWithGoogle(idToken),
+    onSuccess: (res) => {
+      if (res.data) {
+        localStorage.setItem('access_token', res.data.accessToken);
+        queryClient.setQueryData(['auth-user'], res.data.user);
+      }
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Google sign-in failed';
+      toast.error(msg);
+    },
+  });
+};
+
 export const useLogoutMutation = () => {
   const queryClient = useQueryClient();
 
