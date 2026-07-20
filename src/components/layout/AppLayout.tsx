@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BookOpen, MessageCircle, LayoutDashboard, Sparkles, User, Bookmark, BarChart3, LogOut, Bot } from 'lucide-react';
+import { BookOpen, MessageCircle, LayoutDashboard, Sparkles, User, Bookmark, BarChart3, LogOut, Bot, Search } from 'lucide-react';
 import { useAuth } from '@features/auth/hooks';
+import { SearchModal } from '@features/search/components/SearchModal';
 
 // ─── Navigation Items ─────────────────────────────────────────────────────────
 const navItems = [
@@ -21,6 +22,22 @@ const navItems = [
 export const AppLayout: React.FC = () => {
   const location = useLocation();
   const { logout, user } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    (window as any).__openSearch = () => setSearchOpen(true);
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      delete (window as any).__openSearch;
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-neutral-50 flex">
@@ -38,6 +55,20 @@ export const AppLayout: React.FC = () => {
               <p className="text-[10px] text-neutral-400 font-medium tracking-wide">Your AI Coach</p>
             </div>
           </div>
+
+          {/* Search */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-sm px-sm py-[10px] rounded-xl text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800 transition-micro w-full text-left"
+          >
+            <Search size={18} className="text-neutral-400" />
+            <span className="flex-1">Search</span>
+            <kbd className="text-[10px] font-mono text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded-md border border-neutral-200">
+              ⌘K
+            </kbd>
+          </button>
+
+          <div className="h-px bg-neutral-100 mx-sm" />
 
           {/* Navigation */}
           <nav className="flex flex-col gap-xs">
@@ -85,6 +116,9 @@ export const AppLayout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* ── Global Search Modal ──────────────────────────────────────────────── */}
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 };
