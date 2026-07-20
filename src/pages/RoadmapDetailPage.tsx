@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Calendar, Clock, Star, Edit2, Archive, Trash2, 
-  CheckCircle2, Compass, Award, Tag, Sparkles
+  CheckCircle2, Compass, Award, Tag, Sparkles, Bookmark 
 } from 'lucide-react';
 import { useRoadmapQuery, useDeleteRoadmapMutation, useToggleArchiveMutation } from '@features/roadmaps/hooks';
 import { PageHeader } from '@components/ui/PageHeader';
@@ -10,6 +10,7 @@ import { DashboardCard } from '@components/ui/DashboardCard';
 import { CTAButton } from '@components/ui/CTAButton';
 import { LoadingScreen } from '@components/ui/LoadingScreen';
 import { RoadmapModal } from '@features/roadmaps/components/RoadmapModal';
+import { useBookmarksQuery, useAddBookmarkMutation, useDeleteBookmarkByReferenceMutation } from '@features/bookmark/hooks';
 
 export const RoadmapDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,31 @@ export const RoadmapDetailPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   const { data: roadmap, isLoading, isError } = useRoadmapQuery(id || '');
+
+  // Bookmarks integration
+  const { data: bookmarksData } = useBookmarksQuery({ limit: 100 });
+  const addBookmarkMutation = useAddBookmarkMutation();
+  const deleteBookmarkByReferenceMutation = useDeleteBookmarkByReferenceMutation();
+
+  const isBookmarked = !!bookmarksData?.items.some(
+    (b) => (b.type === 'ai-roadmap' || b.type === 'manual-roadmap') && b.referencedId === id
+  );
+
+  const handleToggleBookmark = () => {
+    if (!roadmap) return;
+    const type = roadmap.tags.includes('AI-Generated') ? 'ai-roadmap' : 'manual-roadmap';
+    if (isBookmarked) {
+      deleteBookmarkByReferenceMutation.mutate({ type, referencedId: roadmap.id });
+    } else {
+      addBookmarkMutation.mutate({
+        type,
+        referencedId: roadmap.id,
+        title: roadmap.title,
+        description: roadmap.description || '',
+        preview: `Subject: ${roadmap.subject} | Difficulty: ${roadmap.difficulty} | Progress: ${roadmap.progress}%`,
+      });
+    }
+  };
 
   if (isLoading) return <LoadingScreen />;
 
@@ -71,6 +97,16 @@ export const RoadmapDetailPage: React.FC = () => {
         description={roadmap.subject}
         action={
           <div className="flex items-center gap-xs">
+            <CTAButton 
+              variant={isBookmarked ? 'primary' : 'secondary'} 
+              size="sm" 
+              onClick={handleToggleBookmark} 
+              className="gap-2xs"
+              disabled={addBookmarkMutation.isPending || deleteBookmarkByReferenceMutation.isPending}
+            >
+              <Bookmark size={14} fill={isBookmarked ? 'currentColor' : 'none'} />
+              {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+            </CTAButton>
             <CTAButton variant="secondary" size="sm" onClick={() => setModalOpen(true)} className="gap-2xs">
               <Edit2 size={14} /> Edit
             </CTAButton>

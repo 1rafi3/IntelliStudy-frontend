@@ -10,6 +10,7 @@ import { RoadmapCard } from '@features/roadmaps/components/RoadmapCard';
 import { RoadmapModal } from '@features/roadmaps/components/RoadmapModal';
 import { useRoadmapsQuery } from '@features/roadmaps/hooks';
 import { RoadmapResponse } from '@features/roadmaps/types';
+import { useBookmarksQuery, useAddBookmarkMutation, useDeleteBookmarkByReferenceMutation } from '@features/bookmark/hooks';
 
 export const RoadmapsPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -38,7 +39,32 @@ export const RoadmapsPage: React.FC = () => {
     sortBy,
     sortOrder,
   });
+  // Bookmarks integration
+  const { data: bookmarksData } = useBookmarksQuery({ limit: 100 });
+  const addBookmarkMutation = useAddBookmarkMutation();
+  const deleteBookmarkByReferenceMutation = useDeleteBookmarkByReferenceMutation();
 
+  const bookmarkedRoadmapIds = new Set(
+    bookmarksData?.items
+      .filter((b) => b.type === 'ai-roadmap' || b.type === 'manual-roadmap')
+      .map((b) => b.referencedId) || []
+  );
+
+  const handleToggleBookmark = (rm: RoadmapResponse) => {
+    const isBookmarked = bookmarkedRoadmapIds.has(rm.id);
+    const type = rm.tags.includes('AI-Generated') ? 'ai-roadmap' : 'manual-roadmap';
+    if (isBookmarked) {
+      deleteBookmarkByReferenceMutation.mutate({ type, referencedId: rm.id });
+    } else {
+      addBookmarkMutation.mutate({
+        type,
+        referencedId: rm.id,
+        title: rm.title,
+        description: rm.description || '',
+        preview: `Subject: ${rm.subject} | Difficulty: ${rm.difficulty} | Progress: ${rm.progress}%`,
+      });
+    }
+  };
   const handleEdit = (roadmap: RoadmapResponse) => {
     setSelectedRoadmap(roadmap);
     setModalOpen(true);
@@ -231,7 +257,13 @@ export const RoadmapsPage: React.FC = () => {
           ) : (
             <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md' : 'flex flex-col gap-sm'}>
               {data.roadmaps.map((rm) => (
-                <RoadmapCard key={rm.id} roadmap={rm} onEdit={handleEdit} />
+                <RoadmapCard 
+                  key={rm.id} 
+                  roadmap={rm} 
+                  onEdit={handleEdit} 
+                  isBookmarked={bookmarkedRoadmapIds.has(rm.id)}
+                  onToggleBookmark={handleToggleBookmark}
+                />
               ))}
             </div>
           )}

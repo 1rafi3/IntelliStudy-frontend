@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Clock,
   TrendingUp,
+  Bookmark,
 } from 'lucide-react';
 import {
   useRecommendationsQuery,
@@ -22,6 +23,11 @@ import {
   useDeleteRecommendationMutation,
 } from '@features/recommendation/hooks';
 import { Recommendation } from '@features/recommendation/types';
+import {
+  useBookmarksQuery,
+  useAddBookmarkMutation,
+  useDeleteBookmarkByReferenceMutation,
+} from '@features/bookmark/hooks';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Recommendations', icon: Sparkles },
@@ -84,6 +90,30 @@ export const RecommendationsPage: React.FC = () => {
   const markAsReadMutation = useMarkAsReadMutation();
   const deleteMutation = useDeleteRecommendationMutation();
 
+  // Bookmarks integration
+  const { data: bookmarksData } = useBookmarksQuery({ limit: 100 });
+  const addBookmarkMutation = useAddBookmarkMutation();
+  const deleteBookmarkByReferenceMutation = useDeleteBookmarkByReferenceMutation();
+
+  const bookmarkedIds = new Set(
+    bookmarksData?.items.filter(b => b.type === 'recommendation').map(b => b.referencedId) || []
+  );
+
+  const handleToggleBookmark = (item: Recommendation) => {
+    const isBookmarked = bookmarkedIds.has(item.id);
+    if (isBookmarked) {
+      deleteBookmarkByReferenceMutation.mutate({ type: 'recommendation', referencedId: item.id });
+    } else {
+      addBookmarkMutation.mutate({
+        type: 'recommendation',
+        referencedId: item.id,
+        title: item.title,
+        description: item.description,
+        preview: `Priority: ${item.priority} | Category: ${item.category}`,
+      });
+    }
+  };
+
   const handleRefresh = () => {
     refreshMutation.mutate();
   };
@@ -97,7 +127,12 @@ export const RecommendationsPage: React.FC = () => {
     ? recommendations
     : recommendations.filter((r) => r.category === activeCategory);
 
-  const isMutationPending = refreshMutation.isPending || markAsReadMutation.isPending || deleteMutation.isPending;
+  const isMutationPending =
+    refreshMutation.isPending ||
+    markAsReadMutation.isPending ||
+    deleteMutation.isPending ||
+    addBookmarkMutation.isPending ||
+    deleteBookmarkByReferenceMutation.isPending;
 
   return (
     <div className="space-y-6 pb-16">
@@ -224,14 +259,28 @@ export const RecommendationsPage: React.FC = () => {
                           {item.priority}
                         </span>
                       </div>
-                      <button
-                        onClick={() => deleteMutation.mutate(item.id)}
-                        disabled={isMutationPending}
-                        className="text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
-                        aria-label="Dismiss recommendation"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleToggleBookmark(item)}
+                          disabled={isMutationPending}
+                          className={`p-1 rounded-lg transition-colors focus:outline-none ${
+                            bookmarkedIds.has(item.id)
+                              ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50 dark:bg-yellow-950/20'
+                              : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950/20'
+                          }`}
+                          aria-label={bookmarkedIds.has(item.id) ? 'Remove from bookmarks' : 'Add to bookmarks'}
+                        >
+                          <Bookmark size={15} fill={bookmarkedIds.has(item.id) ? 'currentColor' : 'none'} />
+                        </button>
+                        <button
+                          onClick={() => deleteMutation.mutate(item.id)}
+                          disabled={isMutationPending}
+                          className="text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
+                          aria-label="Dismiss recommendation"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Content Section */}

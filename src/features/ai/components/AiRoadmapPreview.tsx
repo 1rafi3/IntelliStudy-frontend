@@ -13,9 +13,11 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Bookmark,
 } from 'lucide-react';
 import { GeneratedRoadmapData, SaveRoadmapDto } from '../types';
 import { useSaveRoadmapMutation } from '../hooks';
+import { useAddBookmarkMutation } from '@features/bookmark/hooks';
 
 interface AiRoadmapPreviewProps {
   data: GeneratedRoadmapData;
@@ -77,6 +79,8 @@ export const AiRoadmapPreview: React.FC<AiRoadmapPreviewProps> = ({ data, onRege
     });
   };
 
+  const addBookmarkMutation = useAddBookmarkMutation();
+
   const handleSave = () => {
     const payload: SaveRoadmapDto = {
       title: data.title,
@@ -99,6 +103,39 @@ export const AiRoadmapPreview: React.FC<AiRoadmapPreviewProps> = ({ data, onRege
     });
   };
 
+  const handleBookmark = () => {
+    const payload: SaveRoadmapDto = {
+      title: data.title,
+      subject: data.title,
+      description: data.summary,
+      goal: data.goal,
+      difficulty: data.difficulty,
+      estimatedDuration: parseInt(data.estimatedDuration) || 1,
+      tags: ['AI-Generated'],
+    };
+
+    saveMutation.mutate(payload, {
+      onSuccess: (response) => {
+        const roadmap = response.data;
+        if (roadmap && roadmap.id) {
+          addBookmarkMutation.mutate({
+            type: 'ai-roadmap',
+            referencedId: roadmap.id,
+            title: payload.title,
+            description: payload.description,
+            preview: `Subject: ${payload.subject} | Difficulty: ${payload.difficulty} | Progress: 0%`,
+          }, {
+            onSuccess: () => {
+              navigate(`/dashboard/roadmaps/${roadmap.id}`);
+            }
+          });
+        } else {
+          navigate('/dashboard/roadmaps');
+        }
+      },
+    });
+  };
+
   return (
     <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden animate-[fadeInUp_0.35s_ease-out]">
       {/* Sticky Action Bar */}
@@ -112,7 +149,7 @@ export const AiRoadmapPreview: React.FC<AiRoadmapPreviewProps> = ({ data, onRege
         <div className="flex gap-2">
           <button
             onClick={onRegenerate}
-            disabled={saveMutation.isPending}
+            disabled={saveMutation.isPending || addBookmarkMutation.isPending}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-gray-100 dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 border border-gray-200 dark:border-gray-800 hover:border-indigo-200 dark:hover:border-indigo-800 px-3 py-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Regenerate roadmap"
           >
@@ -120,12 +157,30 @@ export const AiRoadmapPreview: React.FC<AiRoadmapPreviewProps> = ({ data, onRege
             Edit & Retry
           </button>
           <button
+            onClick={handleBookmark}
+            disabled={saveMutation.isPending || addBookmarkMutation.isPending}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 px-3 py-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Bookmark roadmap"
+          >
+            {addBookmarkMutation.isPending ? (
+              <>
+                <Loader2 size={13} className="animate-spin" />
+                Bookmarking…
+              </>
+            ) : (
+              <>
+                <Bookmark size={13} />
+                Bookmark Roadmap
+              </>
+            )}
+          </button>
+          <button
             onClick={handleSave}
-            disabled={saveMutation.isPending}
+            disabled={saveMutation.isPending || addBookmarkMutation.isPending}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 px-3 py-2 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Save roadmap to dashboard"
           >
-            {saveMutation.isPending ? (
+            {saveMutation.isPending && !addBookmarkMutation.isPending ? (
               <>
                 <Loader2 size={13} className="animate-spin" />
                 Saving…

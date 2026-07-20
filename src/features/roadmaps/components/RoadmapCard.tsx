@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, Clock, Calendar, MoreVertical, 
-  Edit2, Archive, Trash2 
+  Edit2, Archive, Trash2, Bookmark 
 } from 'lucide-react';
 import { RoadmapResponse } from '../types';
 import { useDeleteRoadmapMutation, useToggleArchiveMutation } from '../hooks';
@@ -10,9 +10,16 @@ import { useDeleteRoadmapMutation, useToggleArchiveMutation } from '../hooks';
 interface RoadmapCardProps {
   roadmap: RoadmapResponse;
   onEdit: (roadmap: RoadmapResponse) => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (roadmap: RoadmapResponse) => void;
 }
 
-export const RoadmapCard: React.FC<RoadmapCardProps> = ({ roadmap, onEdit }) => {
+export const RoadmapCard: React.FC<RoadmapCardProps> = ({ 
+  roadmap, 
+  onEdit,
+  isBookmarked = false,
+  onToggleBookmark
+}) => {
   const navigate = useNavigate();
   const deleteMutation = useDeleteRoadmapMutation();
   const archiveMutation = useToggleArchiveMutation();
@@ -62,7 +69,7 @@ export const RoadmapCard: React.FC<RoadmapCardProps> = ({ roadmap, onEdit }) => 
       
       {/* Header Info */}
       <div className="flex justify-between items-start gap-xs mb-sm">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <span className={`inline-flex items-center px-xs py-3xs rounded-md text-[10px] font-bold border capitalize ${getDifficultyColor(roadmap.difficulty)}`}>
             {roadmap.difficulty}
           </span>
@@ -72,47 +79,63 @@ export const RoadmapCard: React.FC<RoadmapCardProps> = ({ roadmap, onEdit }) => 
           <p className="text-xs text-neutral-400 mt-2xs truncate">{roadmap.subject}</p>
         </div>
 
-        {/* Action Dropdown Menu */}
-        <div className="relative shrink-0">
-          <button 
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="p-xs text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 rounded-lg transition-micro"
-          >
-            <MoreVertical size={16} />
-          </button>
-          
-          {dropdownOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-              <div className="absolute right-0 mt-xs w-36 bg-white border border-neutral-200/60 rounded-xl shadow-md py-xs z-20 text-xs">
-                <button
-                  onClick={() => { setDropdownOpen(false); navigate(`/dashboard/roadmaps/${roadmap.id}`); }}
-                  className="w-full text-left px-sm py-xs text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 flex items-center gap-xs font-medium"
-                >
-                  <BookOpen size={14} /> View Details
-                </button>
-                <button
-                  onClick={() => { setDropdownOpen(false); onEdit(roadmap); }}
-                  className="w-full text-left px-sm py-xs text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 flex items-center gap-xs font-medium"
-                >
-                  <Edit2 size={14} /> Edit
-                </button>
-                <button
-                  onClick={() => { setDropdownOpen(false); handleArchive(); }}
-                  className="w-full text-left px-sm py-xs text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 flex items-center gap-xs font-medium"
-                >
-                  <Archive size={14} /> {roadmap.archived ? 'Unarchive' : 'Archive'}
-                </button>
-                <div className="border-t border-neutral-100 my-xs" />
-                <button
-                  onClick={() => { setDropdownOpen(false); handleDelete(); }}
-                  className="w-full text-left px-sm py-xs text-red-600 hover:bg-red-50 flex items-center gap-xs font-semibold"
-                >
-                  <Trash2 size={14} /> Delete
-                </button>
-              </div>
-            </>
+        {/* Action buttons (Bookmark & Dropdown) */}
+        <div className="flex items-center gap-xs shrink-0">
+          {onToggleBookmark && (
+            <button
+              onClick={() => onToggleBookmark(roadmap)}
+              className={`p-xs rounded-lg transition-micro focus:outline-none ${
+                isBookmarked
+                  ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50'
+                  : 'text-neutral-400 hover:text-yellow-500 hover:bg-neutral-50'
+              }`}
+              title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Roadmap'}
+            >
+              <Bookmark size={15} fill={isBookmarked ? 'currentColor' : 'none'} />
+            </button>
           )}
+
+          <div className="relative">
+            <button 
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="p-xs text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 rounded-lg transition-micro"
+            >
+              <MoreVertical size={16} />
+            </button>
+            
+            {dropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
+                <div className="absolute right-0 mt-xs w-36 bg-white border border-neutral-200/60 rounded-xl shadow-md py-xs z-20 text-xs">
+                  <button
+                    onClick={() => { setDropdownOpen(false); navigate(`/dashboard/roadmaps/${roadmap.id}`); }}
+                    className="w-full text-left px-sm py-xs text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 flex items-center gap-xs font-medium"
+                  >
+                    <BookOpen size={14} /> View Details
+                  </button>
+                  <button
+                    onClick={() => { setDropdownOpen(false); onEdit(roadmap); }}
+                    className="w-full text-left px-sm py-xs text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 flex items-center gap-xs font-medium"
+                  >
+                    <Edit2 size={14} /> Edit
+                  </button>
+                  <button
+                    onClick={() => { setDropdownOpen(false); handleArchive(); }}
+                    className="w-full text-left px-sm py-xs text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 flex items-center gap-xs font-medium"
+                  >
+                    <Archive size={14} /> {roadmap.archived ? 'Unarchive' : 'Archive'}
+                  </button>
+                  <div className="border-t border-neutral-100 my-xs" />
+                  <button
+                    onClick={() => { setDropdownOpen(false); handleDelete(); }}
+                    className="w-full text-left px-sm py-xs text-red-600 hover:bg-red-50 flex items-center gap-xs font-semibold"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

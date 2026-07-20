@@ -27,6 +27,14 @@ export const recommendationService = {
   },
 
   /**
+   * Fetch a single recommendation by ID (regardless of read status).
+   */
+  getById: async (id: string): Promise<Recommendation> => {
+    const response = await api.get(`/recommendations/${id}`);
+    return response.data.data;
+  },
+
+  /**
    * Dismiss/Delete a recommendation.
    */
   delete: async (id: string): Promise<void> => {

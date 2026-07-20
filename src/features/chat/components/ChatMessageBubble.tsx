@@ -1,4 +1,4 @@
-import { Bot, User, Copy, Check } from 'lucide-react';
+import { Bot, User, Copy, Check, Bookmark } from 'lucide-react';
 import { ChatMessage } from '../types';
 import { formatMessage } from '../utils/formatMessage';
 import { cn } from '@/utils';
@@ -6,9 +6,11 @@ import { useState } from 'react';
 
 interface Props {
   message: ChatMessage;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (message: ChatMessage) => void;
 }
 
-export function ChatMessageBubble({ message }: Props) {
+export function ChatMessageBubble({ message, isBookmarked = false, onToggleBookmark }: Props) {
   const isAi = message.role === 'assistant';
   const [copied, setCopied] = useState(false);
 
@@ -56,10 +58,25 @@ export function ChatMessageBubble({ message }: Props) {
 
         {/* Floating Actions on Hover (for AI responses) */}
         {isAi && (
-          <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center gap-xs">
+            {onToggleBookmark && (
+              <button
+                onClick={() => onToggleBookmark(message)}
+                className={cn(
+                  "p-1.5 rounded-lg shadow-sm border transition-all hover:scale-105 active:scale-95 focus:outline-none",
+                  isBookmarked
+                    ? "text-yellow-500 hover:text-yellow-600 bg-yellow-50 border-yellow-250"
+                    : "text-gray-400 hover:text-yellow-500 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+                )}
+                title={isBookmarked ? "Remove explanation bookmark" : "Bookmark explanation"}
+                aria-label={isBookmarked ? "Remove explanation bookmark" : "Bookmark explanation"}
+              >
+                <Bookmark size={15} fill={isBookmarked ? 'currentColor' : 'none'} />
+              </button>
+            )}
             <button
               onClick={handleCopy}
-              className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 transition-all hover:scale-105 active:scale-95"
+              className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 transition-all hover:scale-105 active:scale-95 focus:outline-none"
               title="Copy response to clipboard"
               aria-label="Copy response to clipboard"
             >

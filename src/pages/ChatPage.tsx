@@ -6,6 +6,7 @@ import { ChatInput } from '@features/chat/components/ChatInput';
 import { useChatSessions, useChatHistory, useSendMessage } from '@features/chat/hooks/useChat';
 import toast from 'react-hot-toast';
 import { ChatMessage } from '@features/chat/types';
+import { useBookmarksQuery, useAddBookmarkMutation, useDeleteBookmarkByReferenceMutation } from '@features/bookmark/hooks';
 
 export const ChatPage: React.FC = () => {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -22,6 +23,45 @@ export const ChatPage: React.FC = () => {
 
   // Mutations
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
+
+  // Bookmarks integration
+  const { data: bookmarksData } = useBookmarksQuery({ limit: 100 });
+  const addBookmarkMutation = useAddBookmarkMutation();
+  const deleteBookmarkByReferenceMutation = useDeleteBookmarkByReferenceMutation();
+
+  const getMessageId = (content: string) => {
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      hash = (hash << 5) - hash + content.charCodeAt(i);
+      hash |= 0;
+    }
+    return `chat-${activeSessionId || 'default'}-${Math.abs(hash)}`;
+  };
+
+  const activeSession = sessions.find((s) => s.id === activeSessionId);
+  const sessionTitle = activeSession ? activeSession.title : 'AI Chat Coach';
+
+  const bookmarkedMsgIds = new Set(
+    bookmarksData?.items
+      .filter((b) => b.type === 'chat-response')
+      .map((b) => b.referencedId) || []
+  );
+
+  const handleToggleBookmark = (msg: ChatMessage) => {
+    const msgId = getMessageId(msg.content);
+    const isBookmarked = bookmarkedMsgIds.has(msgId);
+    if (isBookmarked) {
+      deleteBookmarkByReferenceMutation.mutate({ type: 'chat-response', referencedId: msgId });
+    } else {
+      addBookmarkMutation.mutate({
+        type: 'chat-response',
+        referencedId: msgId,
+        title: `Coach reply in "${sessionTitle}"`,
+        description: msg.content.substring(0, 180) + (msg.content.length > 180 ? '...' : ''),
+        preview: msg.content,
+      });
+    }
+  };
 
   // Clear pending optimistic message once it appears in confirmed history
   useEffect(() => {
@@ -145,7 +185,12 @@ export const ChatPage: React.FC = () => {
                 </div>
               ) : (
                 displayMessages.map((msg, idx) => (
-                  <ChatMessageBubble key={idx} message={msg} />
+                  <ChatMessageBubble 
+                    key={idx} 
+                    message={msg} 
+                    isBookmarked={bookmarkedMsgIds.has(getMessageId(msg.content))}
+                    onToggleBookmark={handleToggleBookmark}
+                  />
                 ))
               )}
 
