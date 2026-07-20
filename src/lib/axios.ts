@@ -37,11 +37,16 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Guard against infinite loop if refresh route itself fails with 401
+    // Guard against infinite loop if refresh route itself fails with 401.
+    // Also skip auth endpoints — a 401 on login/register/google means bad credentials,
+    // not an expired token. Let the component surface the real error.
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/refresh')
+      !originalRequest.url?.includes('/auth/refresh') &&
+      !originalRequest.url?.includes('/auth/login') &&
+      !originalRequest.url?.includes('/auth/register') &&
+      !originalRequest.url?.includes('/auth/google')
     ) {
       originalRequest._retry = true;
 
